@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="ufm-guide-version" content="2026-11-10-margenes-portada">
   <meta name="theme-color" content="#ed2418">
   <meta name="description" content="Guía para Madrid de la Universidad Francisco Marroquín. Hospedaje, transporte, presupuesto, visado y seguro, en una guía interactiva.">
   <title>Guía para Madrid | UFM</title>
@@ -39,6 +40,30 @@ body{font-family:"Myriad Pro","Myriad Variable Concept","Segoe UI",Arial,sans-se
 .official-brand{width:68%;max-width:470px;flex:none;margin:0 auto}
 .official-logo{display:block;width:100%;height:auto;object-fit:contain}
 .kind-contact .contact-person{margin-top:9%;max-width:100%;flex:none}
+
+/* Áreas independientes: ningún contenido puede invadir el pie de página. */
+.native-content{inset:10% 6% 10%;overflow:hidden}
+.native-content>.section-kicker,.native-content>h2{flex:none}
+.native-content>.native-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#c8beb0 transparent;padding-right:2px}
+.body-flow{display:flow-root;min-height:0}
+.page-bottom{bottom:3%;height:3%;margin:0;padding-top:1.2%;border-top:1px solid #ddd5c9;background:inherit;z-index:12}
+.cover .page-bottom{border-top-color:#ffffff30}
+.kind-budget .budget-total{padding:4.5% 5%;margin-bottom:3%}
+.kind-budget .budget-total strong{font-size:clamp(32px,calc(var(--book-w)*.075),64px)}
+.kind-budget table{font-size:clamp(11px,calc(var(--book-w)*.024),20px)}
+.kind-budget table th,.kind-budget table td{padding:1.05% 0}
+.kind-budget .fine-print{font-size:clamp(10px,calc(var(--book-w)*.018),15px);margin-top:3%!important}
+.kind-documents ul{margin:3% 0}
+.kind-documents li{padding-top:1.1%;padding-bottom:1.1%;font-size:clamp(11px,calc(var(--book-w)*.023),20px)}
+.kind-documents .fine-print{margin-top:3%!important}
+.kind-contact .native-body{justify-content:center}
+.kind-contact .body-flow{width:100%;display:flex;flex-direction:column;align-items:center;flex:none}
+.book{transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+.book.is-closed{transform:translateX(calc(var(--book-w)*-.5))}
+.book.is-back-cover{transform:translateX(calc(var(--book-w)*.5))}
+.book-stage{overflow:visible}
+@media(max-width:1099px){.native-content{inset:9% 6% 10%}.kind-budget table th,.kind-budget table td{padding:1% 0}}
+@media(prefers-reduced-motion:reduce){.book{transition:none}}
 </style>
 </head>
 <body>
@@ -122,13 +147,13 @@ function pageMarkup(index, clone = false) {
   const top = `<div class="page-top"><span>${escapeHTML(p.chapter.toUpperCase())}</span><span>UFM · MADRID</span></div>`;
   const bottom = `<div class="page-bottom"><span>GUÍA PARA MADRID</span><span>${pad(index + 1)}</span></div>`;
   if (p.cover) return top + `<div class="cover-layout"><h2 class="cover-title">Guía para <span>Madrid.</span></h2><div class="cover-space${customCover ? ' has-cover' : ''}">${customCover ? `<img class="cover-image" src="${escapeHTML(customCover)}" alt="${customCover===CONFIG.defaultCover ? 'Gran Vía y el edificio Metrópolis en Madrid al atardecer. Foto de Florian Wehde.' : 'Portada de Guía para Madrid'}">` : '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26"/><circle cx="11" cy="11" r="3"/><path d="m4 26 9-9 5 5 4-5 7 8"/></svg><strong>ESPACIO PARA TU PORTADA</strong>'}</div><p class="cover-intro">En esta guía te compartimos información referente a hospedaje, transporte, seguro y visado.</p><button class="open-book" ${clone ? 'tabindex="-1"' : ''}>Abrir la guía <span aria-hidden="true"><svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></span></button></div>` + bottom;
-  return top + `<section class="native-content kind-${escapeHTML(p.kind||'standard')}">${p.kind==='contact' ? '' : `<div class="section-kicker">${pad(index)} / ${escapeHTML(p.chapter)}</div><h2>${escapeHTML(p.heading||p.title)}</h2>`}<div class="native-body">${p.html||p.text}</div></section>` + bottom;
+  return top + `<section class="native-content kind-${escapeHTML(p.kind||'standard')}">${p.kind==='contact' ? '' : `<div class="section-kicker">${pad(index)} / ${escapeHTML(p.chapter)}</div><h2>${escapeHTML(p.heading||p.title)}</h2>`}<div class="native-body"><div class="body-flow">${p.html||p.text}</div></div></section>` + bottom;
 }
 function fillPage(el, index, clone = false) {
   const p = PAGES[index];
   el.className = 'page' + (p.cover ? ' cover' : '') + (!p.cover ? ' native-page' : '') + (p.kind==='contact' ? ' contact-leaf' : '');
   el.innerHTML = pageMarkup(index, clone);
-  if (!clone) el.querySelectorAll('.open-book,.cover-image-open').forEach(b => b.addEventListener('click', () => go(landscape()?2:1)));
+  if (!clone) el.querySelectorAll('.open-book,.cover-image-open').forEach(b => b.addEventListener('click', () => go(1)));
 }
 function renderText() {
   const p = PAGES[current];
@@ -137,18 +162,22 @@ function renderText() {
   $('textPage').scrollTop = 0;
 }
 function landscape() { return !reading && engine?.getOrientation() === 'landscape'; }
-function visiblePages() { return landscape() ? [current, current+1].filter(i=>i<PAGES.length) : [current]; }
-function syncUI() {
+function visiblePages() { return landscape() && current>0 ? [current,current+1].filter(i=>i<PAGES.length) : [current]; }
+function syncUI(state=engine?.getState()) {
   const visible=visiblePages();
   $('counter').textContent = `${visible.map(i=>pad(i+1)).join('–')} / ${pad(PAGES.length)}`;
   $('chapterLabel').textContent = visible.map(i=>PAGES[i].chapter).filter((v,i,a)=>a.indexOf(v)===i).join(' / ').toUpperCase();
-  $('prev').disabled=current===0;
-  $('next').disabled=visible[visible.length-1]>=PAGES.length-1;
+  const turning=state==='flipping';
+  $('prev').disabled=current===0||turning;
+  $('next').disabled=visible[visible.length-1]>=PAGES.length-1||turning;
+  $('book').classList.toggle('is-closed',landscape()&&current===0&&!turning);
+  $('book').classList.toggle('is-back-cover',landscape()&&current===PAGES.length-1&&PAGES.length%2===0&&!turning);
   $('progress').value=current+1;
   document.querySelectorAll('#contents [data-page]').forEach(b=>{b.removeAttribute('aria-current');if(visible.includes(Number(b.dataset.page)))b.setAttribute('aria-current','page');});
   pageElements.forEach((el,i)=>{el.inert=!visible.includes(i);el.setAttribute('aria-hidden',String(!visible.includes(i)));});
   $('zoom').disabled=reading;
   if(reading)renderText();
+  scheduleContentFit();
 }
 function setLocation() {try{history.replaceState(null,'',`#pagina-${current+1}`);}catch{}}
 function go(index,animate=true,writeHash=true) {
@@ -156,15 +185,43 @@ function go(index,animate=true,writeHash=true) {
   if(reading){current=index;syncUI();if(writeHash)setLocation();return;}
   if(!engine || engine.getState()==='flipping')return;
   if(!animate||reduceMotion.matches)engine.turnToPage(index);
-  else engine.flip(index,'bottom');
+  else runAnimated(()=>engine.flip(index,'bottom'));
 }
 function step(direction) {
   if(reading){go(current+direction,false);return;}
   if(engine.getState()==='flipping')return;
   try{
     if(reduceMotion.matches){if(direction>0)engine.turnToNextPage();else engine.turnToPrevPage();}
-    else if(direction>0)engine.flipNext('bottom');else engine.flipPrev('bottom');
-  }catch{}
+    else runAnimated(()=>direction>0?engine.flipNext('bottom'):engine.flipPrev('bottom'));
+  }catch{toast('No se pudo pasar la hoja. Volvé a intentarlo.');}
+}
+// El filtro de clics en esquinas no debe bloquear los botones programáticos.
+function runAnimated(action){
+  const settings=engine.getSettings(),restricted=settings.disableFlipByClick;
+  settings.disableFlipByClick=false;
+  try{action();}finally{settings.disableFlipByClick=restricted;}
+}
+let fittingQueued=false;
+function scheduleContentFit(){
+  if(fittingQueued)return;
+  fittingQueued=true;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    fittingQueued=false;
+    if(reading)return;
+    for(const i of visiblePages()){
+      const body=pageElements[i]?.querySelector('.native-body');
+      const flow=body?.querySelector('.body-flow');
+      if(!body||!flow||body.clientHeight<=0)continue;
+      flow.style.zoom='1';
+      if(typeof CSS==='undefined'||!CSS.supports('zoom','1'))continue;
+      const minimum=innerWidth<600?.94:.84;
+      let scale=1;
+      while(body.scrollHeight>body.clientHeight+1&&scale>minimum){
+        scale=Math.max(minimum,Math.round((scale-.02)*100)/100);
+        flow.style.zoom=String(scale);
+      }
+    }
+  }));
 }
 function bookDimensions(width=innerWidth,forceSingle=singlePage,height=innerHeight,factor=sizeFactor) {
   const desktop=width>=1100;
@@ -196,7 +253,7 @@ function resizeBook() {
 }
 function refreshCover() {
   pageElements[0].innerHTML=pageMarkup(0);
-  pageElements[0].querySelector('.open-book')?.addEventListener('click',()=>go(landscape()?2:1));
+  pageElements[0].querySelector('.open-book')?.addEventListener('click',()=>go(1));
 }
 function readHash(){const m=location.hash.match(/^#pagina-(\d+)$/);return m?Math.max(0,Math.min(PAGES.length-1,Number(m[1])-1)):0;}
 function initBook(){
@@ -207,10 +264,14 @@ function initBook(){
   }
   engine=new St.PageFlip($('book'),{
     width:dims.pageWidth,height:dims.pageHeight,size:'fixed',usePortrait:true,
-    showCover:false,drawShadow:true,maxShadowOpacity:.30,flippingTime:1050,
+    showCover:true,drawShadow:true,maxShadowOpacity:.30,flippingTime:1050,
     autoSize:true,showPageCorners:!reduceMotion.matches,disableFlipByClick:true,
     clickEventForward:true,mobileScrollSupport:true,swipeDistance:40,
     startPage:readHash(),useMouseEvents:!reduceMotion.matches
+  });
+  engine.on('changeState',e=>{
+    if(e.data==='flipping')$('book').classList.remove('is-closed','is-back-cover');
+    if(e.data==='flipping'||e.data==='read')syncUI(e.data);
   });
   engine.on('flip',e=>{current=e.data;syncUI();setLocation();});
   engine.on('changeOrientation',()=>syncUI());
